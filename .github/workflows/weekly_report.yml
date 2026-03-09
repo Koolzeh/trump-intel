@@ -1,0 +1,39 @@
+name: Relatório Semanal Excel
+
+on:
+  schedule:
+    # 12:00 UTC = 09:00 BRT — toda segunda-feira
+    - cron: "0 12 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repositório
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependências
+        run: pip install requests openpyxl
+
+      - name: Gerar relatório Excel
+        env:
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+        run: python python/weekly_report.py
+
+      - name: Commit e push do relatório
+        run: |
+          git config user.name  "Trump Intel Bot"
+          git config user.email "bot@trump-intel.local"
+          git add data/
+          git diff --staged --quiet || git commit -m "relatório semanal $(date +'%d/%m/%Y')"
+          git push
